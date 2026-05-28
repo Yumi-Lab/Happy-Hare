@@ -108,11 +108,11 @@ fi
 # ── Verify paths ───────────────────────────────────────────────────────
 verify_paths() {
     local ok=1
-    [ ! -d "${KLIPPER_HOME}/klippy/extras" ] && { error "Klipper not found at ${KLIPPER_HOME}"; ok=0; }
-    [ ! -d "${MOONRAKER_HOME}/moonraker/components" ] && { error "Moonraker not found at ${MOONRAKER_HOME}"; ok=0; }
-    [ ! -d "${CONFIG_HOME}" ] && { error "Config dir not found at ${CONFIG_HOME}"; ok=0; }
-    [ ! -f "${PRINTER_CFG}" ] && { error "printer.cfg not found"; ok=0; }
-    [ $ok -eq 0 ] && exit 1
+    if [ ! -d "${KLIPPER_HOME}/klippy/extras" ]; then error "Klipper not found at ${KLIPPER_HOME}"; ok=0; fi
+    if [ ! -d "${MOONRAKER_HOME}/moonraker/components" ]; then error "Moonraker not found at ${MOONRAKER_HOME}"; ok=0; fi
+    if [ ! -d "${CONFIG_HOME}" ]; then error "Config dir not found at ${CONFIG_HOME}"; ok=0; fi
+    if [ ! -f "${PRINTER_CFG}" ]; then error "printer.cfg not found"; ok=0; fi
+    if [ $ok -eq 0 ]; then exit 1; fi
 }
 
 verify_paths
