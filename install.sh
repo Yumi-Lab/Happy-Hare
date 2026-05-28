@@ -1598,6 +1598,7 @@ questionaire() {
     option MMX            'MMX'
     option VVD            'BigTreeTech ViViD (BETA)'
     option KMS            'KMS'
+    option YMS            'YUMiLab YMS (Yumi Multi-color System)'
     option OTHER          'Other / Custom (or just want starter config files)'
     prompt_option opt 'MMU Type' "${OPTIONS[@]}"
     case $opt in
@@ -2090,6 +2091,43 @@ questionaire() {
             _param_gate_endstop_to_encoder=14
             _param_gate_autoload=1
             _param_gate_final_eject_distance=300  
+            _param_has_filament_buffer=0
+
+            _param_autocal_bowden_length=1
+            _param_autotune_bowden_length=0
+            _param_skip_cal_rotation_distance=0
+            _param_autotune_rotation_distance=1
+            _param_skip_cal_encoder=0
+            _param_autotune_encoder=0
+
+            _param_sync_feedback_enabled=1
+            _param_sync_feedback_buffer_range=8
+            _param_sync_feedback_buffer_maxrange=12
+            ;;
+
+        "$YMS")
+            HAS_ENCODER=no
+            HAS_SELECTOR=no
+            HAS_SERVO=no
+            HAS_ESPOOLER=no
+
+            _hw_mmu_vendor="YUMI"
+            _hw_mmu_version="1.0"
+            _hw_selector_type=VirtualSelector
+            _hw_variable_bowden_lengths=0
+            _hw_variable_rotation_distances=1
+            _hw_require_bowden_move=1
+            _hw_filament_always_gripped=1
+            _hw_gear_gear_ratio="50:10"
+            _hw_gear_run_current=0.7
+            _hw_gear_hold_current=0.1
+
+            _param_extruder_homing_endstop="none"
+            _param_gate_homing_endstop="mmu_gate"
+            _param_gate_homing_max=300
+            _param_gate_preload_homing_max=200
+            _param_gate_parking_distance=100
+            _param_gate_final_eject_distance=100
             _param_has_filament_buffer=0
 
             _param_autocal_bowden_length=1
