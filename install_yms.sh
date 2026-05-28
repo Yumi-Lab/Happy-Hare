@@ -166,6 +166,28 @@ done
 # Copy mmu_vars
 cp "${SRCDIR}/config/mmu_vars.cfg" "${CONFIG_HOME}/mmu/mmu_vars.cfg"
 
+# ── Replace install tokens in copied configs ──
+# Get Happy Hare version from Python source
+HH_VERSION=$(grep -oP 'VERSION = \K[0-9.]+' "${SRCDIR}/extras/mmu/mmu.py" | head -1)
+if [ -z "$HH_VERSION" ]; then HH_VERSION="3.42"; fi
+
+# Replace {happy_hare_version} token
+PARAMS_CFG="${CONFIG_HOME}/mmu/base/mmu_parameters.cfg"
+if [ -f "$PARAMS_CFG" ]; then
+    sed -i "s/{happy_hare_version}/${HH_VERSION}/" "$PARAMS_CFG"
+fi
+
+# Replace {tx_macros} with T0..TN macros
+MACROVARS_CFG="${CONFIG_HOME}/mmu/base/mmu_macro_vars.cfg"
+if [ -f "$MACROVARS_CFG" ]; then
+    TX=""
+    for i in $(seq 0 $((NUM_GATES - 1))); do
+        TX="${TX}[gcode_macro T${i}]\ngcode: MMU_CHANGE_TOOL TOOL=${i}\n"
+    done
+    sed -i "s|{tx_macros}|${TX}|" "$MACROVARS_CFG"
+fi
+info "  Replaced install tokens (version=${HH_VERSION}, ${NUM_GATES} T-macros)"
+
 # ══════════════════════════════════════════════════════════════════════
 # Step 3: Generate mmu.cfg for YMS
 # ══════════════════════════════════════════════════════════════════════
@@ -287,15 +309,37 @@ GEARBLOCK
 done
 
 # Add gate sensor section (map existing filament sensors)
-cat >> "${HW_CFG}" << 'SENSORBLOCK'
+# Auto-detect toolhead sensor pin from printer.cfg
+TOOLHEAD_PIN=""
+# Look for common toolhead filament sensor patterns
+for pattern in "filament_switch_sensor.*toolhead" "filament_switch_sensor.*extruder_sensor"; do
+    pin=$(grep -A5 "\[${pattern}\]" "${PRINTER_CFG}" 2>/dev/null | grep "switch_pin" | head -1 | sed 's/.*switch_pin: *//' | sed 's/ *#.*//')
+    if [ -n "$pin" ]; then
+        TOOLHEAD_PIN="$pin"
+        break
+    fi
+done
 
-# ── Gate Sensors ───────────────────────────────────────────────────────
-# Happy Hare can use existing filament_motion_sensor definitions.
-# Gate sensors are detected by name pattern: mmu_gate, mmu_gate_1, etc.
-# For YMS, the existing YMS-N filament sensors serve this role.
-# TODO: Map YMS-N sensors to mmu_gate sensor names or configure in mmu_parameters.cfg
+cat >> "${HW_CFG}" << SENSORBLOCK
+
+# ── Sensors ────────────────────────────────────────────────────────────
+# YMS uses existing filament_motion_sensor per gate (YMS-1 to YMS-7)
+# The [mmu_sensors] section must exist for Happy Hare to initialize
+[mmu_sensors]
+# Toolhead filament presence sensor (on printhead)
+toolhead_switch_pin: ${TOOLHEAD_PIN:-}
+# No pre-gate sensors on YMS
+# No post-gear sensors on YMS
+# No encoder on YMS
+# No sync feedback sensors on YMS
 
 SENSORBLOCK
+
+if [ -n "$TOOLHEAD_PIN" ]; then
+    info "  Toolhead sensor detected: ${TOOLHEAD_PIN}"
+else
+    info "  No toolhead sensor detected (can be added manually)"
+fi
 
 info "  Hardware config generated: ${HW_CFG}"
 
